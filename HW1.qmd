@@ -1,0 +1,15 @@
+---
+title: "STAT204 - HW01"
+format: html
+---
+
+## loading relevant package
+```{r}
+library(palmerpenguins)
+```
+
+## exploring "penguin" data file
+
+```{r}
+summary(penguins)
+```
