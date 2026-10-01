@@ -1,15 +1,183 @@
 ---
 title: "STAT204 - HW01"
-format: html
+format: pdf
 ---
+# Setup
+## Loading Relevant Package
 
-## loading relevant package
 ```{r}
 library(palmerpenguins)
 ```
 
-## exploring "penguin" data file
+## Exploring "penguin" Data File
 
 ```{r}
 summary(penguins)
+
+## to check how many rows are in the dataframe
+nrow(penguins)
+
+## to check how many columns are in the dataframe
+ncol(penguins)
+
+## to check what variable types are in the dataframe
+str(penguins)
+```
+
+# Part 1: Vectors and Summary Statisitcs
+## 1.1 Extract and Analyze Bill Lengths
+
+```{r}
+## Extract bill_length_mm as a vector
+## this pulls out the data in the "bill_length_mm" column
+bill_lengths <- penguins$bill_length_mm
+
+## Calculate: mean, median, sd, min, max (handle NAs!)
+mean_bill_length <- mean(bill_lengths, na.rm = TRUE)
+median_bill_length <- median(bill_lengths, na.rm = TRUE)
+sd_bill_length <- sd(bill_lengths, na.rm = TRUE)
+min_bill_length <- min(bill_lengths, na.rm = TRUE)
+max_bill_length <- max(bill_lengths, na.rm = TRUE)
+```
+
+## 1.2 Logical Subsetting
+
+```{r}
+# Create logical vector: TRUE when bill length > 45mm
+long_bills <- penguins$bill_length_mm > 45
+
+# How many penguins have long bills?
+sum(long_bills, na.rm = TRUE) ## 165 penguins have bills longer that 45mm
+```
+
+# Part 2: Subsetting Data 
+## 2.1 Island analysis 
+
+```{r}
+## to check how many differnt island names are in the column
+unique(penguins$island)
+
+# Extract bill lengths for Dream island penguins only
+dream_bill_lengths <- penguins$bill_length_mm[penguins$island == "Dream"]
+dream_bill_lengths
+
+# Calculate the mean for this subset
+mean(dream_bill_lengths, na.rm = TRUE)
+```
+
+## 2.2 Species Counting
+
+```{r}
+# How many Adelie penguins are in the dataset?
+adelie_count <- sum(penguins$species == "Adelie")
+adelie_count
+```
+
+## 2.3 Find the Heaviest Penguin
+
+```{r}
+# Find: body mass, species, and island of the heaviest penguin
+
+## to identify row index (or location) of the maximum body mass in the dataframe
+big_penguin_row <- which.max(penguins$body_mass_g) 
+big_penguin_row
+
+## extract information from specific columns in the row
+penguins[big_penguin_row, c("body_mass_g", "species", "island")]
+```
+
+# Part 3: Matrices and apply()
+## 3.1 Create Measurement Matrix
+
+```{r}
+# Remove rows with missing values
+penguins_complete <- penguins[complete.cases(penguins), ]
+
+# Create matrix with: bill_length_mm, bill_depth_mm, 
+# flipper_length_mm, body_mass_g
+
+## column bind function to combine vectors side by side as columns in a matrix   
+penguin_measurements <- cbind(
+    penguins$bill_length_mm,
+    penguins$bill_depth_mm, 
+    penguins$flipper_length_mm,
+    penguins$body_mass_g
+)
+
+## column names assigns names to columns in new matrix
+colnames(penguin_measurements) <- c(
+    "bill_length_mm",
+    "bill_depth_mm",
+    "flipper_length_mm",
+    "body_mass_g"
+)
+
+```
+
+## 3.2 Apply Functions
+
+```{r}
+# Use apply() to calculate mean of each column
+apply(penguin_measurements, 2, mean, na.rm = TRUE)  ## the number 2 is for columns
+
+# Use apply() to find which row has the maximum for each column
+## which.max finds position of max value
+## note this is not the actual max value in each column
+apply(penguin_measurements, 2, which.max)  
+```
+
+# Part 4: Custom Function
+
+```{r}
+# Function that: removes NAs, returns (x - mean) / sd
+## this creates a standardizing function called "standardize"
+
+standardize <- function(x) {
+  x <- na.omit(x)             # this removes NAs
+  (x - mean(x)) / sd(x)       # this standardizes each value
+}
+ 
+# Test on bill_length_mm
+bill_length_standardized <- standardize(penguins$bill_length_mm)
+
+# Verify: mean ≈ 0, sd ≈ 1
+mean(bill_length_standardized)
+sd(bill_length_standardized)
+```
+
+## Bonus
+**Option A**: Create a summary data frame with one row per species showing: count, mean body mass, mean flipper length
+
+```{r}
+## first need to create 4 vectors
+
+## 1. to get the unique number of species 
+species <- unique(penguins$species)
+
+## 2. to count the number of penguins in each species
+penguin_count <- table(penguins$species)
+
+## 3. to calculate mean body mass for each species
+mean_body_mass <- tapply(
+    penguins$body_mass_g,   ## to specify the variable
+    penguins$species,       ## to specify how it should be grouped (e.g. by species)
+    mean,                   ## to specify desired function
+    na.rm = TRUE            ## to remove NAs
+)
+
+## 4. to calculate mean flipper length for each species 
+mean_flipper_length <- tapply(
+    penguins$flipper_length_mm, ## to specify the variable
+    penguins$species,           ## to specify how it should be grouped 
+    mean,                       ## to specify desired function
+    na.rm = TRUE                ## to remove NAs
+)
+
+## summary dataframe
+penguins_summary_df <- data.frame(
+    species = species,                ## left side is the name of column
+    count = penguin_count,            ## right side is the object containing the data
+    mean_body_mass = mean_body_mass,  
+    mean_flipper_length = mean_flipper_length
+)
 ```
